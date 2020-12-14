@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Mafia</string>
+    <string name="contraseña">Contraseña</string>
+    <string name="sacarFoto">Cámara</string>
+    <string name="buscarFoto">Galeria</string>
+    <string name="ingresar">Ingresar</string>
+    <string name="toastContraseñaVacia">Introduce una contraseña</string>
+    <string name="contraseñaIncorrecta">Contraseña incorrecta</string>
+    <string name="activarMonitoreo">Activar seguimiento</string>
+    <string name="desactivarMonitoreo">Desactivar seguimiento</string>
+    <string name="botonDatos">Datos</string>
+    <string name="borrarDatos">Borrar datos</string>
+    <string name="botonCompartir">Compartir</string>
+    <string name="alarmaPantalla">Alarma pantalla</string>
+    <string name="alarmaProximidad">Alarma proximidad</string>
+</resources>
