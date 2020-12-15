@@ -67,7 +67,7 @@ public class MiServicioIntenso extends JobIntentService {
     static ActividadPrincipal actividadPrincipal;
     OnBateriaCambia onBateriaCambia = new OnBateriaCambia();
     ManejadorBD manejadorBD = new ManejadorBD(actividadPrincipal);
-    SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+
 
 
     public MiServicioIntenso() {
@@ -197,16 +197,16 @@ public class MiServicioIntenso extends JobIntentService {
                 }
 
 
-            }else if(checkAlarmaDistancia(
-                    (double)pref.getFloat(LATITUD,0),
-                    (double)pref.getFloat(LONGITUD,0)
+            }/*else if(checkAlarmaDistancia(
+                    dameLatitud(),
+                    dameLongitud()
             )){
 
+                Log.i("ESTADO"," Entro al intent");
 
 
 
-
-            }
+            }*/
 
         }
     }
@@ -287,7 +287,9 @@ public class MiServicioIntenso extends JobIntentService {
 
     }
 
-    private String calcularLocalizacion(double latitud,double longitud) throws IOException {
+
+
+     private String calcularLocalizacion(double latitud,double longitud) throws IOException {
 
         Geocoder geocoder;
         List<Address> addresses;
@@ -295,19 +297,16 @@ public class MiServicioIntenso extends JobIntentService {
 
         addresses = geocoder.getFromLocation(latitud, longitud, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
 
-        /*String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-        String city = addresses.get(0).getLocality();
-        String state = addresses.get(0).getAdminArea();
-        String country = addresses.get(0).getCountryName();
-        String postalCode = addresses.get(0).getPostalCode();
-        String knownName = addresses.get(0).getFeatureName();*/
+
 
         String aux = addresses.get(0).getAddressLine(0)+", "+addresses.get(0).getLocality()+", "+addresses.get(0).getCountryName();
 
         return aux;
 
     }
+    /*
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public boolean checkAlarmaDistancia(double latitud, double longitud){
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -317,7 +316,12 @@ public class MiServicioIntenso extends JobIntentService {
             if(calcularDistancia(longitud,latitud)){
 
                 Log.i("ESTADO"," Me he pasado de la distancia");
-                //aqui iria el insertar
+                try {
+                    insertar("Distancia de seguridad sobrepasada");
+                    Log.i("ESTADO","  he insertado la distancia");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 return true;
 
             }
@@ -328,6 +332,8 @@ public class MiServicioIntenso extends JobIntentService {
     }
 
     private boolean calcularDistancia(double longitud, double latitud){
+
+        Log.i("ESTADO"," calculo la distancia");
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -352,6 +358,28 @@ public class MiServicioIntenso extends JobIntentService {
         }
 
     }
+
+    public double dameLatitud(){
+
+        Log.i("ESTADO"," doy latitud");
+
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(MiServicioIntenso.this);
+        double latitud = (double)pref.getFloat(LATITUD,0);
+        return latitud;
+
+    }
+
+    public double dameLongitud(){
+
+        Log.i("ESTADO"," doy longitud");
+
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(MiServicioIntenso.this);
+        double longitud = (double)pref.getFloat(LONGITUD,0);
+        return longitud;
+
+    }
+
+     */
 
 
 }

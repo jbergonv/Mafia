@@ -50,7 +50,7 @@ public class ActividadPrincipal extends AppCompatActivity {
     double latitud,longitud,altitud;
 
 
-    private static final long TIEMPO_REFRESCO = 2500;
+    private static final long TIEMPO_REFRESCO = 5000;
     private static final int PERMISO_GPS = 15;
     private  static final String ALARMA_SONIDO = "ALARMA_SONIDO";
     private  static final String ALARMA_PROXIMIDAD = "ALARMA_PROXIMIDAD";
@@ -65,7 +65,7 @@ public class ActividadPrincipal extends AppCompatActivity {
     public static ActividadPrincipal ap2;
     ManejadorBD manejadorBD = new ManejadorBD(this);
     ActividadPrincipal ap = this;
-    int maximoDistancia;
+    float maximoDistancia;
     float latitudBase,longitudBase;
 
 
@@ -182,7 +182,7 @@ public class ActividadPrincipal extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
                 etiquetaDistancia.setText(""+progress);
-                maximoDistancia=progress;
+                maximoDistancia=(float)progress;
 
             }
 
@@ -325,12 +325,12 @@ public class ActividadPrincipal extends AppCompatActivity {
 
     }
 
-    public void comprobarAlarmaProximidad(boolean proximidad, int maximo){
+    public void comprobarAlarmaProximidad(boolean proximidad, float maximo){
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean(ALARMA_PROXIMIDAD,proximidad);
-        editor.putInt(MAXIMA_DISTANCIA,maximo);
+        editor.putFloat(MAXIMA_DISTANCIA,maximo);
         editor.apply();
 
     }
