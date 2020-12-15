@@ -1,6 +1,7 @@
 package com.example.mafia;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -13,6 +14,9 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.VibrationEffect;
@@ -41,20 +45,31 @@ String LOG_TAG = "MiServicioIntenso";
     private static String LONGITUD = "LONGITUD";
     private static String ALTITUD = "ALTITUD";
     private static final String PREFERENCIAS = "preferencias";
-    ManejadorBD manejadorBD = new ManejadorBD(this);
+    private  static final String ALARMA_SONIDO = "ALARMA_SONIDO";
+
     double latitud,longitud,altitud=0;
     LocationManager locationManager;
     LocationListener locationListener;
     static Context contextoPrincipal;
+    static ActividadPrincipal actividadPrincipal;
     OnBateriaCambia onBateriaCambia = new OnBateriaCambia();
+    ManejadorBD manejadorBD = new ManejadorBD(actividadPrincipal);
 
 
     public MiServicioIntenso() {
     }
 
+    @Override
+    public boolean stopService(Intent name) {
+        stopSelf();
+        return super.stopService(name);
 
-    static void encolarTrabajo(Context context, Intent work){
+    }
+
+
+    static void encolarTrabajo(Context context, Intent work, ActividadPrincipal ap){
         contextoPrincipal=context;
+        actividadPrincipal=ap;
         enqueueWork(context, MiServicioIntenso.class, JOB_ID, work);
 
     }
@@ -63,7 +78,7 @@ String LOG_TAG = "MiServicioIntenso";
 
         MiServicioIntenso miServicioIntenso = new MiServicioIntenso();
 
-        ManejadorBD manejadorBD = new ManejadorBD(miServicioIntenso);
+        ManejadorBD manejadorBD = new ManejadorBD(actividadPrincipal);
         manejadorBD.borrar();
 
     }
@@ -71,11 +86,14 @@ String LOG_TAG = "MiServicioIntenso";
 
     @Override
     protected void onHandleWork(@NonNull Intent intent) {
+
+
         IntentFilter intentFilter = new IntentFilter("android.intent.action.ACTION_POWER_CONNECTED");
         intentFilter.addAction("android.intent.action.ACTION_POWER_DISCONNECTED");
         intentFilter.addAction("android.intent.action.BATTERY_LOW");
         intentFilter.addAction("android.net.wifi.STATE_CHANGE");
         intentFilter.addAction("android.intent.action.SCREEN_ON");
+        intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
         getBaseContext().registerReceiver(onBateriaCambia,intentFilter);
 
         while(true){
@@ -123,6 +141,9 @@ String LOG_TAG = "MiServicioIntenso";
         @Override
         public void onReceive(Context context, Intent intent) {
 
+
+
+
             if (intent.getAction().equals(Intent.ACTION_POWER_CONNECTED)){
                 Log.i("ESTADO", "Cable conectado");
                 insertar("Cable conectado");
@@ -132,24 +153,32 @@ String LOG_TAG = "MiServicioIntenso";
                 Toast.makeText(context, "Cable desconectado", Toast.LENGTH_SHORT).show();
             }else if(intent.getAction().equals(Intent.ACTION_BATTERY_LOW)){
                 Log.i("ESTADO", "Batería baja");
-            }else if(intent.getAction().equals("android.net.wifi.STATE_CHANGE")){
-                Log.i("ESTADO", "Cambio wifi");
-                Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            }else if(intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE")){
+                Log.i("ESTADO", "Cambio red");
+                if(!comprobarConexion()){
+
+                    Log.i("ESTADO","Sin conexion");
+                    insertar("Sin conexión");
+
+                }
+                /*Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     v.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
                 } else {
                     //deprecated in API 26
                     v.vibrate(500);
-                }
+                }*/
             }else if(intent.getAction().equals(Intent.ACTION_SCREEN_ON)){
 
                 Log.i("ESTADO","Pantalla encendida");
+                comprobarSonido();
                 //permisosGPS();
                 insertar("Pantalla encendida");
 
 
             }
+
         }
     }
 
@@ -225,6 +254,36 @@ String LOG_TAG = "MiServicioIntenso";
 
     }
 
+    public boolean comprobarConexion(){
+
+        boolean connected = false;
+        ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+            //we are connected to a network
+            connected = true;
+        }
+        else {
+            connected = false;
+        }
+
+        return connected;
+
+    }
+
+    public void comprobarSonido(){
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        if(sharedPreferences.getBoolean(ALARMA_SONIDO,false)){
+
+            Context context;
+            MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.sonido);
+            mediaPlayer.start();
+
+        }
+
+    }
 
 
 }

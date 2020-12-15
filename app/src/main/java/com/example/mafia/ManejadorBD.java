@@ -33,8 +33,8 @@ public class ManejadorBD extends SQLiteOpenHelper {
         super(context, name, factory, version);
     }
 
-    public ManejadorBD(MiServicioIntenso miServicioIntenso){
-        super(miServicioIntenso,DATABASE_NAME,null,1);
+    public ManejadorBD(ActividadPrincipal actividadPrincipal){
+        super(actividadPrincipal,DATABASE_NAME,null,1);
     }
 
 

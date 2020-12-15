@@ -7,11 +7,12 @@ import android.util.Log;
 
 public class MyReceiver extends BroadcastReceiver {
 String LOG_TAG = "MyReceiver";
+ActividadPrincipal actividadPrincipal = new ActividadPrincipal();
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)){
             Log.d(LOG_TAG, "Arrannnnnnnnnnnnnco  el servicio");
-            MiServicioIntenso.encolarTrabajo(context, new Intent());
+            MiServicioIntenso.encolarTrabajo(context, new Intent(),actividadPrincipal);
 
        }
 

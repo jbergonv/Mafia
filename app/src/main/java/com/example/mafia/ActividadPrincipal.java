@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -22,6 +23,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,13 +41,14 @@ public class ActividadPrincipal extends AppCompatActivity {
 
     private static final long TIEMPO_REFRESCO = 2500;
     private static final int PERMISO_GPS = 15;
+    private  static final String ALARMA_SONIDO = "ALARMA_SONIDO";
     private static String ESTADO_SEGUIMIENTO = "ESTADO_SEGUIMIENTO";
     private static String LATITUD = "LATITUD";
     private static String LONGITUD = "LONGITUD";
     private static String ALTITUD = "ALTITUD";
     private static final String PREFERENCIAS = "preferencias";
-    MiServicioIntenso miServicioIntenso = new MiServicioIntenso();
-    ManejadorBD manejadorBD = new ManejadorBD(miServicioIntenso);
+    ManejadorBD manejadorBD = new ManejadorBD(this);
+    ActividadPrincipal ap = this;
 
 
     @Override
@@ -63,6 +66,16 @@ public class ActividadPrincipal extends AppCompatActivity {
         alarmaPantalla = findViewById(R.id.checkAlarmaPantalla);
         alarmaProximidad = findViewById(R.id.checkAlarmaPRoximidad);
         distanciaProximidad = findViewById(R.id.seekBarDistancia);
+        etiquetaDistancia.setText("0");
+        distanciaProximidad.setProgress(0);
+        etiquetaMonitoreo.setText("Monitoreo inactivo");
+
+        if(isMyServiceRunning(MiServicioIntenso.class)){
+
+            etiquetaMonitoreo.setText("Monitoreo activo");
+
+        }
+
 
         //manejadorBD.insertar("test", "test", "test", "test");
 
@@ -71,9 +84,23 @@ public class ActividadPrincipal extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+                if(isMyServiceRunning(MiServicioIntenso.class)){
 
-                MiServicioIntenso.encolarTrabajo(getApplicationContext(), new Intent());
-                tets();
+                    etiquetaMonitoreo.setText("Monitoreo inactivo");
+
+
+
+
+                }else{
+
+                    etiquetaMonitoreo.setText("Monitoreo activo");
+                    MiServicioIntenso.encolarTrabajo(getApplicationContext(), new Intent(), ap);
+                    tets();
+
+                }
+
+
+
 
             }
         });
@@ -82,7 +109,54 @@ public class ActividadPrincipal extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                manejadorBD.borrar();
+                if(manejadorBD.borrar()){
+                    Toast.makeText(ap, "Datos borrados correctamente", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        });
+
+        alarmaProximidad.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+
+
+            }
+        });
+
+        alarmaPantalla.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                if(isChecked){
+
+                    comprobarAlarmaSonido(true);
+
+                }else{
+
+                    comprobarAlarmaSonido(false);
+
+                }
+
+            }
+        });
+
+        distanciaProximidad.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+                etiquetaDistancia.setText(""+progress);
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
 
             }
         });
@@ -178,6 +252,32 @@ public class ActividadPrincipal extends AppCompatActivity {
 
 
     }
+
+    public void comprobarAlarmaSonido(boolean sonido){
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(ALARMA_SONIDO,sonido);
+        editor.apply();
+
+    }
+
+    private boolean isMyServiceRunning(Class<?> MiServicioIntenso) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (MiServicioIntenso.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void pararServicio(){
+
+        
+
+    }
+
 }
 
 
