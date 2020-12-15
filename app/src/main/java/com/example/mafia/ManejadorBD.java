@@ -5,8 +5,15 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import static android.content.Context.LOCATION_SERVICE;
+import static androidx.core.content.ContextCompat.getSystemService;
 
 public class ManejadorBD extends SQLiteOpenHelper {
 
@@ -17,15 +24,17 @@ public class ManejadorBD extends SQLiteOpenHelper {
     private static final String COL_BATERIA = "BATERIA";
     private static final String COL_POSICION = "POSICION";
     private static final String COL_DIRECCION = "DIRECCION";
-
+    private static final String COL_MOTIVO = "MOTIVO";
     private static final String TABLE_NAME = "LOCALIZACION";
+
+
 
     public ManejadorBD(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
     }
 
-    public ManejadorBD(MainActivity mainActivity){
-        super(mainActivity,DATABASE_NAME,null,1);
+    public ManejadorBD(MiServicioIntenso miServicioIntenso){
+        super(miServicioIntenso,DATABASE_NAME,null,1);
     }
 
 
@@ -33,7 +42,7 @@ public class ManejadorBD extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
 
         db.execSQL("CREATE TABLE " + TABLE_NAME + "(" + COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + COL_FECHA + " TEXT, " + COL_BATERIA + " TEXT, " + COL_POSICION + " TEXT, " + COL_DIRECCION + " TEXT "+ ")");
+                + COL_FECHA + " TEXT, " + COL_BATERIA + " TEXT, " + COL_POSICION + " TEXT, " + COL_DIRECCION + " TEXT, "+ COL_MOTIVO + ")");
 
 
     }
@@ -44,7 +53,7 @@ public class ManejadorBD extends SQLiteOpenHelper {
     }
 
 
-    public boolean insertar(String fecha, String bateria, String posicion, String direccion){
+    public boolean insertar(String fecha, String bateria, String posicion, String direccion,String motivo){
 
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
@@ -52,6 +61,7 @@ public class ManejadorBD extends SQLiteOpenHelper {
         contentValues.put(COL_BATERIA,bateria);
         contentValues.put(COL_POSICION,posicion);
         contentValues.put(COL_DIRECCION,direccion);
+        contentValues.put(COL_MOTIVO,motivo);
 
         long resultado = db.insert(TABLE_NAME,null,contentValues);
         db.close();
@@ -77,6 +87,8 @@ public class ManejadorBD extends SQLiteOpenHelper {
         return cursor;
 
     }
+
+
 
 
 }
