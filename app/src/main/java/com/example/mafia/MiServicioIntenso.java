@@ -11,12 +11,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.BatteryManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.VibrationEffect;
@@ -25,9 +28,15 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.JobIntentService;
 import androidx.core.app.NotificationCompat;
@@ -35,46 +44,47 @@ import androidx.core.app.NotificationCompat;
 import static androidx.core.content.ContextCompat.getSystemService;
 
 public class MiServicioIntenso extends JobIntentService {
-String LOG_TAG = "MiServicioIntenso";
+    String LOG_TAG = "MiServicioIntenso";
     static final int JOB_ID = 12111;
     static final int ID = 1;
-    static final String ID_CHANNEL = "nombreCanal" ;
+    static final String ID_CHANNEL = "nombreCanal";
     private static final long TIEMPO_REFRESCO = 500;
     private static final int PERMISO_GPS = 15;
     private static String LATITUD = "LATITUD";
     private static String LONGITUD = "LONGITUD";
     private static String ALTITUD = "ALTITUD";
+    private static final String LONGITUD_BASE = "LONGITUD_BASE";
+    private static final String LATITUD_BASE = "LATITUD_BASE";
     private static final String PREFERENCIAS = "preferencias";
-    private  static final String ALARMA_SONIDO = "ALARMA_SONIDO";
+    private static final String ALARMA_SONIDO = "ALARMA_SONIDO";
+    private static final String ALARMA_PROXIMIDAD = "ALARMA_PROXIMIDAD";
+    private static final String MAXIMA_DISTANCIA = "MAXIMA_DISTANCIA";
 
-    double latitud,longitud,altitud=0;
+    double latitud, longitud, altitud = 0;
     LocationManager locationManager;
     LocationListener locationListener;
     static Context contextoPrincipal;
     static ActividadPrincipal actividadPrincipal;
     OnBateriaCambia onBateriaCambia = new OnBateriaCambia();
     ManejadorBD manejadorBD = new ManejadorBD(actividadPrincipal);
+    SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 
 
     public MiServicioIntenso() {
     }
 
-    @Override
-    public boolean stopService(Intent name) {
-        stopSelf();
-        return super.stopService(name);
 
-    }
+    static void encolarTrabajo(Context context, Intent work, ActividadPrincipal ap) {
+        contextoPrincipal = context;
+        actividadPrincipal = ap;
 
-
-    static void encolarTrabajo(Context context, Intent work, ActividadPrincipal ap){
-        contextoPrincipal=context;
-        actividadPrincipal=ap;
         enqueueWork(context, MiServicioIntenso.class, JOB_ID, work);
 
+
     }
 
-    static void borrarBD(){
+
+    static void borrarBD() {
 
         MiServicioIntenso miServicioIntenso = new MiServicioIntenso();
 
@@ -85,6 +95,16 @@ String LOG_TAG = "MiServicioIntenso";
 
 
     @Override
+    public boolean stopService(Intent name) {
+        stopSelf();
+        return super.stopService(name);
+
+    }
+
+
+    @Override
+
+
     protected void onHandleWork(@NonNull Intent intent) {
 
 
@@ -94,13 +114,13 @@ String LOG_TAG = "MiServicioIntenso";
         intentFilter.addAction("android.net.wifi.STATE_CHANGE");
         intentFilter.addAction("android.intent.action.SCREEN_ON");
         intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
-        getBaseContext().registerReceiver(onBateriaCambia,intentFilter);
+        getBaseContext().registerReceiver(onBateriaCambia, intentFilter);
 
-        while(true){
+        while (true) {
             Log.d(LOG_TAG, "Comienzo a currar");
             mandarNotificacion(getApplicationContext());
             try {
-                Thread.sleep(1000*30);
+                Thread.sleep(1000 * 30);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -117,20 +137,20 @@ String LOG_TAG = "MiServicioIntenso";
         Intent intent = new Intent(applicationContext, MainActivity.class);
         Random random = new Random();
 
-        intent.putExtra("MENSAJE", "El número es: "+random.nextInt(100000));
+        intent.putExtra("MENSAJE", "El número es: " + random.nextInt(100000));
 
 
         PendingIntent pendingIntent = PendingIntent.getActivity(applicationContext,
-                ID+random.nextInt(10), intent, 0);
+                ID + random.nextInt(10), intent, 0);
 
 
         Notification notification = new NotificationCompat.Builder(applicationContext, ID_CHANNEL)
 
-        .setContentTitle("Notificación de prueba").setContentText("Un texto divertido").
+                .setContentTitle("Notificación de prueba").setContentText("Un texto divertido").
                         setSmallIcon(R.drawable.ic_launcher_background).
-                setContentIntent(pendingIntent).build();
+                        setContentIntent(pendingIntent).build();
 
-        notificationManager.notify(1,notification);
+        notificationManager.notify(1, notification);
 
     }
 
@@ -138,118 +158,73 @@ String LOG_TAG = "MiServicioIntenso";
 
 
 
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onReceive(Context context, Intent intent) {
 
 
-
-
             if (intent.getAction().equals(Intent.ACTION_POWER_CONNECTED)){
                 Log.i("ESTADO", "Cable conectado");
-                insertar("Cable conectado");
+                try {
+                    insertar("Cable conectado");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-            }else if (intent.getAction().equals(Intent.ACTION_POWER_DISCONNECTED)){
-                Log.i("ESTADO", "Cable desconectado");
-                Toast.makeText(context, "Cable desconectado", Toast.LENGTH_SHORT).show();
-            }else if(intent.getAction().equals(Intent.ACTION_BATTERY_LOW)){
-                Log.i("ESTADO", "Batería baja");
             }else if(intent.getAction().equals("android.net.conn.CONNECTIVITY_CHANGE")){
                 Log.i("ESTADO", "Cambio red");
                 if(!comprobarConexion()){
 
                     Log.i("ESTADO","Sin conexion");
-                    insertar("Sin conexión");
+                    try {
+                        insertar("Sin conexión");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
                 }
-                /*Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    v.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
-                } else {
-                    //deprecated in API 26
-                    v.vibrate(500);
-                }*/
             }else if(intent.getAction().equals(Intent.ACTION_SCREEN_ON)){
 
                 Log.i("ESTADO","Pantalla encendida");
                 comprobarSonido();
+
                 //permisosGPS();
-                insertar("Pantalla encendida");
-
-
-            }
-
-        }
-    }
-
-    public void permisosGPS() {
-
-        /*locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(@NonNull Location location) {
-
-                latitud = location.getLatitude();
-                longitud = location.getLongitude();
-                altitud = location.getAltitude();
-
-            }
-        };*/
-
-
-        /*if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(actividadPrincipal, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISO_GPS);
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-
-            return;
-        }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                TIEMPO_REFRESCO, 0, locationListener);*/
-
-
-    }
-
-
-
-
-    /*public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-
-        if (requestCode == PERMISO_GPS) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                        && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "No tienes persmiso", Toast.LENGTH_SHORT).show();
-                }else {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                            TIEMPO_REFRESCO, 0, locationListener);
+                try {
+                    insertar("Pantalla encendida");
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            }else{
-                Toast.makeText(this, "Debes darme permiso para continuar", Toast.LENGTH_SHORT).show();
+
+
+            }else if(checkAlarmaDistancia(
+                    (double)pref.getFloat(LATITUD,0),
+                    (double)pref.getFloat(LONGITUD,0)
+            )){
+
+
+
+
+
             }
 
         }
-    }*/
+    }
 
-    public void insertar(String motivo){
+
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void insertar(String motivo) throws IOException {
 
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
+        double auxLatitud = (double) sharedPreferences.getFloat(LATITUD,0);
+        double auxLongitud = (double) sharedPreferences.getFloat(LONGITUD,0);
 
-        manejadorBD.insertar("fecha","bateria",""+sharedPreferences.getFloat(LATITUD,0)+""+sharedPreferences.getFloat(LONGITUD,0)
-                +""+sharedPreferences.getFloat(ALTITUD,0),"direccion",motivo);
+
+        manejadorBD.insertar(getDateTime(),bateriaActual(),""+sharedPreferences.getFloat(LATITUD,0)+""+sharedPreferences.getFloat(LONGITUD,0)
+                +""+sharedPreferences.getFloat(ALTITUD,0),calcularLocalizacion(auxLatitud,auxLongitud),motivo);
 
 
     }
@@ -281,6 +256,99 @@ String LOG_TAG = "MiServicioIntenso";
             MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.sonido);
             mediaPlayer.start();
 
+        }
+
+    }
+
+    private String getDateTime() {
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+
+                "dd-MM-yyyy HH:mm:ss", Locale.getDefault());
+
+        Date date = new Date();
+
+        return dateFormat.format(date);
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private String bateriaActual(){
+
+        String aux="";
+
+        BatteryManager bm = (BatteryManager)getSystemService(BATTERY_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            int percentage = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+            aux=percentage+"%";
+        }
+
+        return aux;
+
+    }
+
+    private String calcularLocalizacion(double latitud,double longitud) throws IOException {
+
+        Geocoder geocoder;
+        List<Address> addresses;
+        geocoder = new Geocoder(this, Locale.getDefault());
+
+        addresses = geocoder.getFromLocation(latitud, longitud, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+
+        /*String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+        String city = addresses.get(0).getLocality();
+        String state = addresses.get(0).getAdminArea();
+        String country = addresses.get(0).getCountryName();
+        String postalCode = addresses.get(0).getPostalCode();
+        String knownName = addresses.get(0).getFeatureName();*/
+
+        String aux = addresses.get(0).getAddressLine(0)+", "+addresses.get(0).getLocality()+", "+addresses.get(0).getCountryName();
+
+        return aux;
+
+    }
+
+    public boolean checkAlarmaDistancia(double latitud, double longitud){
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        if(sharedPreferences.getBoolean(ALARMA_PROXIMIDAD,false)){
+
+            if(calcularDistancia(longitud,latitud)){
+
+                Log.i("ESTADO"," Me he pasado de la distancia");
+                //aqui iria el insertar
+                return true;
+
+            }
+
+        }
+
+        return false;
+    }
+
+    private boolean calcularDistancia(double longitud, double latitud){
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        double distanciaMaxima = (double)sharedPreferences.getFloat(MAXIMA_DISTANCIA,0);
+        double latitudBase = (double)sharedPreferences.getFloat(LATITUD_BASE,0);
+        double longitudBase = (double)sharedPreferences.getFloat(LONGITUD_BASE,0);
+
+        Location locationBase = new Location("");
+        locationBase.setLatitude(latitudBase);
+        locationBase.setLongitude(longitudBase);
+
+        Location loc2 = new Location("");
+        loc2.setLatitude(longitud);
+        loc2.setLongitude(latitud);
+
+        float distanceInMeters = locationBase.distanceTo(loc2);
+
+        if(distanceInMeters>distanciaMaxima){
+            return true;
+        }else{
+            return false;
         }
 
     }
