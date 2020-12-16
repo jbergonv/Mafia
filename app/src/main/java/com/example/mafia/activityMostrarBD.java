@@ -3,8 +3,12 @@ package com.example.mafia;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.ContextWrapper;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -19,6 +23,8 @@ public class activityMostrarBD extends AppCompatActivity {
     ListView lista;
     ActividadPrincipal actividadPrincipal = ActividadPrincipal.ap2;
     ManejadorBD manejadorBD = new ManejadorBD(actividadPrincipal);
+    String[] arrayPosicion = new String[100];
+    int cont=0;
 
 
 
@@ -29,6 +35,17 @@ public class activityMostrarBD extends AppCompatActivity {
         lista = findViewById(R.id.lista);
 
         mostrar();
+
+        lista.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                Intent intento = new Intent(Intent.ACTION_VIEW);
+                intento.setData(Uri.parse("geo:"+arrayPosicion[position]));
+                startActivity(intento);
+
+            }
+        });
 
 
 
@@ -46,7 +63,9 @@ public class activityMostrarBD extends AppCompatActivity {
                 fila += cursor.getString(0);
                 fila += " " + cursor.getString(1);
                 fila += " " + cursor.getString(2);
-                fila += " \n" + cursor.getString(3);
+                fila += " " + cursor.getString(3);
+                arrayPosicion[cont]=cursor.getString(3);
+                cont++;
                 fila += " " + cursor.getString(4);
                 fila += " " + cursor.getString(5);
                 listaB.add(fila);

@@ -3,12 +3,16 @@ package com.example.mafia;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.ActivityManager;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -16,6 +20,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
@@ -24,6 +30,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -61,7 +68,11 @@ public class ActividadPrincipal extends AppCompatActivity {
     private static String LATITUD = "LATITUD";
     private static String LONGITUD = "LONGITUD";
     private static String ALTITUD = "ALTITUD";
+    private static final String ID_CANAL =  "practica final";
+    private static final int CODIGO_RESPUESTA = 1 ;
     private static final String PREFERENCIAS = "preferencias";
+    private static String BITMAP = "BITMAP_FOTO";
+    private static String REGISTROS_ANTIGUOS = "REGISTROS_ANTIGUOS";
     public static ActividadPrincipal ap2;
     ManejadorBD manejadorBD = new ManejadorBD(this);
     ActividadPrincipal ap = this;
@@ -75,7 +86,8 @@ public class ActividadPrincipal extends AppCompatActivity {
         setContentView(R.layout.activity_actividad_principal);
         ap2=this;
 
-
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
 
         etiquetaMonitoreo = findViewById(R.id.etiquetaMonitoreo);
         etiquetaDistancia = findViewById(R.id.textViewDistancia);
@@ -89,6 +101,10 @@ public class ActividadPrincipal extends AppCompatActivity {
         etiquetaDistancia.setText("0");
         distanciaProximidad.setProgress(0);
         etiquetaMonitoreo.setText("Monitoreo inactivo");
+        lanzarNotificacion();
+
+        Log.i("CUENTA", ""+manejadorBD.contarFilas());
+
 
         if(isMyServiceRunning(MiServicioIntenso.class)){
 
@@ -104,10 +120,13 @@ public class ActividadPrincipal extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+
+
                 if(isMyServiceRunning(MiServicioIntenso.class)){
 
                     etiquetaMonitoreo.setText("Monitoreo inactivo");
-
+                    editor.putBoolean(ESTADO_SEGUIMIENTO,false);
+                    editor.apply();
 
 
 
@@ -115,6 +134,8 @@ public class ActividadPrincipal extends AppCompatActivity {
                 }else{
 
                     etiquetaMonitoreo.setText("Monitoreo activo");
+                    editor.putBoolean(ESTADO_SEGUIMIENTO,true);
+                    editor.apply();
                     MiServicioIntenso.encolarTrabajo(getApplicationContext(), new Intent(), ap);
                     tets();
 
@@ -149,9 +170,11 @@ public class ActividadPrincipal extends AppCompatActivity {
 
                     comprobarAlarmaProximidad(true,maximoDistancia);
 
+
                 }else{
 
                     comprobarAlarmaProximidad(false,maximoDistancia);
+
 
                 }
 
@@ -167,10 +190,12 @@ public class ActividadPrincipal extends AppCompatActivity {
                 if(isChecked){
 
                     comprobarAlarmaSonido(true);
+                    lanzarNotificacionAlarmaPantalla("Alarma pantalla activada");
 
                 }else{
 
                     comprobarAlarmaSonido(false);
+                    lanzarNotificacionAlarmaPantalla("Alarma pantalla desactivada");
 
                 }
 
@@ -221,6 +246,8 @@ public class ActividadPrincipal extends AppCompatActivity {
 
 
     }
+
+
 
     void crearCanalNotificaciones() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -393,12 +420,11 @@ public class ActividadPrincipal extends AppCompatActivity {
             fileWriter.close();
             Toast.makeText(this, "SE CREO EL ARCHIVO CSV EXITOSAMENTE", Toast.LENGTH_LONG).show();
 
-            /*Intent intento = new Intent();
+            Intent intento = new Intent();
             intento.setAction(Intent.ACTION_SEND);
-            intento.setPackage("com.whatsapp");
             intento.setType("text/plain");
-            intento.putExtra(Intent.EXTRA_FROM_STORAGE,Uri.parse(archivoAgenda));
-            startActivity(intento);*/
+            intento.putExtra(Intent.EXTRA_STREAM,Uri.parse(archivoAgenda));
+            startActivity(intento);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -421,6 +447,130 @@ public class ActividadPrincipal extends AppCompatActivity {
 
         }
     }
+
+
+    private void lanzarNotificacion() {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        SharedPreferences sharedPreferences = getSharedPreferences(PREFERENCIAS, MODE_PRIVATE);
+        String foto = sharedPreferences.getString(BITMAP,"");
+        Bitmap map = StringToBitMap(foto);
+
+        Context context;
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, ID_CANAL).
+                setSmallIcon(R.drawable.ic_launcher_background)
+                .setContentTitle("Práctica final")
+                .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(map))
+                .setAutoCancel(false)
+                .setContentText("Ha habido "+cuentaInsertados()+" nuevos registros desde el último acceso. ");
+
+        String idChannel = "1";
+        String nombreCanal = "Canal de notificaciones sencillas";
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel =
+                    new NotificationChannel(idChannel, nombreCanal, NotificationManager.IMPORTANCE_DEFAULT);
+
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.RED);
+            notificationChannel.enableVibration(true);
+            notificationChannel.setShowBadge(true);
+            builder.setChannelId(idChannel);
+            notificationManager.createNotificationChannel(notificationChannel);
+
+
+        }else{
+            builder.setDefaults(Notification.DEFAULT_SOUND| Notification.DEFAULT_VIBRATE | Notification.DEFAULT_LIGHTS);
+
+        }
+
+
+        TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(getApplicationContext());
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("NOMBRE", "Notificación sencilla");
+
+        taskStackBuilder.addNextIntent(intent);
+        PendingIntent pendingIntent = taskStackBuilder.getPendingIntent(CODIGO_RESPUESTA, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(pendingIntent);
+        notificationManager.notify(1, builder.build());
+
+
+    }
+
+    public Bitmap StringToBitMap(String encodedString){
+        try{
+            byte [] encodeByte = Base64.decode(encodedString,Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0, encodeByte.length);
+            return bitmap;
+        }
+        catch(Exception e){
+            e.getMessage();
+            return null;
+        }
+    }
+
+    public int cuentaInsertados(){
+
+        SharedPreferences misPreferencias = getSharedPreferences(PREFERENCIAS,MODE_PRIVATE);
+        SharedPreferences.Editor editor = misPreferencias.edit();
+
+        int registrosActuales = manejadorBD.contarFilas();
+        int registrosAntiguos = misPreferencias.getInt(REGISTROS_ANTIGUOS,0);
+
+        int cuenta = registrosActuales-registrosAntiguos;
+
+        editor.putInt(REGISTROS_ANTIGUOS,registrosActuales);
+        editor.apply();
+
+        return cuenta;
+
+
+    }
+
+
+    private void lanzarNotificacionAlarmaPantalla(String texto) {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Context context;
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, ID_CANAL).
+                setSmallIcon(R.drawable.ic_launcher_background)
+                .setContentTitle("Alarma pantalla")
+                .setAutoCancel(false)
+                .setContentText(texto);
+
+        String idChannel = "1";
+        String nombreCanal = "Canal de notificaciones sencillas";
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel =
+                    new NotificationChannel(idChannel, nombreCanal, NotificationManager.IMPORTANCE_DEFAULT);
+
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.RED);
+            notificationChannel.enableVibration(true);
+            notificationChannel.setShowBadge(true);
+            builder.setChannelId(idChannel);
+            notificationManager.createNotificationChannel(notificationChannel);
+
+
+        }else{
+            builder.setDefaults(Notification.DEFAULT_SOUND| Notification.DEFAULT_VIBRATE | Notification.DEFAULT_LIGHTS);
+
+        }
+
+
+        TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(getApplicationContext());
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("NOMBRE", "Notificación sencilla");
+
+        taskStackBuilder.addNextIntent(intent);
+        PendingIntent pendingIntent = taskStackBuilder.getPendingIntent(CODIGO_RESPUESTA, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(pendingIntent);
+        notificationManager.notify(1, builder.build());
+
+
+    }
+
+
 
 
 

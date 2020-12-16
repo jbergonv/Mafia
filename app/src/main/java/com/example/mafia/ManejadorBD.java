@@ -3,6 +3,7 @@ package com.example.mafia;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
@@ -85,6 +86,15 @@ public class ManejadorBD extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM "+TABLE_NAME,null);
         return cursor;
+
+    }
+
+    public int contarFilas(){
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        int contador = (int) DatabaseUtils.queryNumEntries(db,TABLE_NAME);
+        db.close();
+        return contador;
 
     }
 
