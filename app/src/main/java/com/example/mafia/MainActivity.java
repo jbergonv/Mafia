@@ -2,24 +2,31 @@ package com.example.mafia;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.text.InputType;
+import android.transition.TransitionManager;
 import android.util.Base64;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -117,8 +124,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         acceder.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
             public void onClick(View v) {
+
+                Context context;
+                Animation animation = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.shake );
+                acceder.startAnimation(animation);
 
                 SharedPreferences misPreferencias = getSharedPreferences(PREFERENCIAS,MODE_PRIVATE);
                 SharedPreferences.Editor editor = misPreferencias.edit();

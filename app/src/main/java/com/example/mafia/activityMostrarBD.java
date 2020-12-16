@@ -40,8 +40,13 @@ public class activityMostrarBD extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
+                String aux = arrayPosicion[position];
+                String[] partes = aux.split(",");
+                String localizacion = partes[0]+","+partes[1];
+
+
                 Intent intento = new Intent(Intent.ACTION_VIEW);
-                intento.setData(Uri.parse("geo:"+arrayPosicion[position]));
+                intento.setData(Uri.parse("geo:"+localizacion));
                 startActivity(intento);
 
             }

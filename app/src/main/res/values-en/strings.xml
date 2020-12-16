@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mafia</string>
+    <string name="contraseña">Password</string>
+    <string name="sacarFoto">Camera</string>
+    <string name="buscarFoto">Gallery</string>
+    <string name="ingresar">Sign in</string>
+    <string name="toastContraseñaVacia">Enter a password</string>
+    <string name="contraseñaIncorrecta">Wrong password</string>
+    <string name="activarMonitoreo">Activate tracing</string>
+    <string name="desactivarMonitoreo">Deactivate tracing</string>
+    <string name="botonDatos">Data</string>
+    <string name="borrarDatos">Delete data</string>
+    <string name="botonCompartir">Share</string>
+    <string name="alarmaPantalla">Screen alarm</string>
+    <string name="alarmaProximidad">Proximity alarm</string>
+</resources>

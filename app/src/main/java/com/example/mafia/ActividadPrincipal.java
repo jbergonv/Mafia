@@ -106,10 +106,12 @@ public class ActividadPrincipal extends AppCompatActivity {
         Log.i("CUENTA", ""+manejadorBD.contarFilas());
 
 
-        if(isMyServiceRunning(MiServicioIntenso.class)){
+        if(sharedPreferences.getBoolean(ESTADO_SEGUIMIENTO,false)){
 
             etiquetaMonitoreo.setText("Monitoreo activo");
 
+        }else{
+            etiquetaMonitoreo.setText("Monitoreo inactivo");
         }
 
 
@@ -275,8 +277,11 @@ public class ActividadPrincipal extends AppCompatActivity {
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         locationListener = new LocationListener() {
+
             @Override
             public void onLocationChanged(@NonNull Location location) {
+
+
 
                 latitudBase = (float)location.getLatitude();
                 longitudBase = (float)location.getLongitude();

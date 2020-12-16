@@ -88,6 +88,7 @@ public class MiServicioIntenso extends JobIntentService {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.i("destruido","me he destruido");
 
     }
 
@@ -234,8 +235,8 @@ public class MiServicioIntenso extends JobIntentService {
             double auxLongitud = (double) sharedPreferences.getFloat(LONGITUD, 0);
 
 
-            manejadorBD.insertar(getDateTime(), bateriaActual(), "" + sharedPreferences.getFloat(LATITUD, 0) + "" + sharedPreferences.getFloat(LONGITUD, 0)
-                    + "" + sharedPreferences.getFloat(ALTITUD, 0), "direccion", motivo); //calcularLocalizacion(auxLatitud, auxLongitud)
+            manejadorBD.insertar(getDateTime(), bateriaActual(), "" + sharedPreferences.getFloat(LATITUD, 0) + "," + sharedPreferences.getFloat(LONGITUD, 0)
+                    + "," + sharedPreferences.getFloat(ALTITUD, 0), calcularLocalizacion(auxLatitud, auxLongitud), motivo); //calcularLocalizacion(auxLatitud, auxLongitud)
 
 
         }
@@ -297,7 +298,7 @@ public class MiServicioIntenso extends JobIntentService {
 
         }
 
-    /*
+
         private String calcularLocalizacion(double latitud, double longitud) throws IOException {
 
             String aux = "";
@@ -311,7 +312,7 @@ public class MiServicioIntenso extends JobIntentService {
                 addresses = geocoder.getFromLocation(latitud, longitud, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
 
 
-                 aux = addresses.get(0).getAddressLine(0) + ", " + addresses.get(0).getLocality() + ", " + addresses.get(0).getCountryName();
+                 aux = addresses.get(0).getLocality() + ", " + addresses.get(0).getCountryName(); //addresses.get(0).getAddressLine(0) + ", " +
 
                 return aux;
 
@@ -325,7 +326,7 @@ public class MiServicioIntenso extends JobIntentService {
             return aux;
         }
 
-        */
+
 
 
 
