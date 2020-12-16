@@ -65,10 +65,10 @@ public class activityMostrarBD extends AppCompatActivity {
         if ((cursor != null) && cursor.getCount() > 0) {
             while (cursor.moveToNext()) {
                 String fila = "";
-                fila += cursor.getString(0);
+                //fila += cursor.getString(0);
                 fila += " " + cursor.getString(1);
-                fila += " " + cursor.getString(2);
-                fila += " " + cursor.getString(3);
+                //fila += " " + cursor.getString(2);
+                //fila += " " + cursor.getString(3);
                 arrayPosicion[cont]=cursor.getString(3);
                 cont++;
                 fila += " " + cursor.getString(4);
