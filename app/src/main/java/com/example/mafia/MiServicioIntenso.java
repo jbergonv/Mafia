@@ -68,7 +68,7 @@ public class MiServicioIntenso extends JobIntentService {
     static Context contextoPrincipal;
     static ActividadPrincipal actividadPrincipal;
     OnBateriaCambia onBateriaCambia = new OnBateriaCambia();
-    ManejadorBD manejadorBD = new ManejadorBD(actividadPrincipal);
+    ManejadorBD manejadorBD = new ManejadorBD(this);
 
 
 
@@ -79,6 +79,7 @@ public class MiServicioIntenso extends JobIntentService {
     static void encolarTrabajo(Context context, Intent work, ActividadPrincipal ap) {
         contextoPrincipal = context;
         actividadPrincipal = ap;
+
 
         enqueueWork(context, MiServicioIntenso.class, JOB_ID, work);
 
@@ -94,7 +95,8 @@ public class MiServicioIntenso extends JobIntentService {
 
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
-        return super.onStartCommand(intent, flags, startId);
+        //return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 
     static void borrarBD() {

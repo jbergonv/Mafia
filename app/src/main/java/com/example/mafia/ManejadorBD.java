@@ -38,6 +38,10 @@ public class ManejadorBD extends SQLiteOpenHelper {
         super(actividadPrincipal,DATABASE_NAME,null,1);
     }
 
+    public ManejadorBD(MiServicioIntenso miServicioIntenso){
+        super(miServicioIntenso,DATABASE_NAME,null,1);
+    }
+
 
     @Override
     public void onCreate(SQLiteDatabase db) {

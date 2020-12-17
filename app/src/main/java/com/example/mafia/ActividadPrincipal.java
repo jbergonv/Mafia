@@ -102,6 +102,7 @@ public class ActividadPrincipal extends AppCompatActivity {
         distanciaProximidad.setProgress(0);
         etiquetaMonitoreo.setText("Monitoreo inactivo");
         lanzarNotificacion();
+        tets();
 
         Log.i("CUENTA", ""+manejadorBD.contarFilas());
 
@@ -139,7 +140,7 @@ public class ActividadPrincipal extends AppCompatActivity {
                     editor.putBoolean(ESTADO_SEGUIMIENTO,true);
                     editor.apply();
                     MiServicioIntenso.encolarTrabajo(getApplicationContext(), new Intent(), ap);
-                    tets();
+
 
                 }
 
